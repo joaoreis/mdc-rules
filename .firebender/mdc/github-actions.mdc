@@ -1,0 +1,268 @@
+---
+description: Guidelines for GitHub Actions workflows focusing on Android CI/CD pipelines, covering best practices for build, test, and deployment automation
+globs: .github/workflows/*.yml
+---
+# GitHub Actions for Android CI/CD
+
+This guide provides best practices for creating efficient, reliable, and maintainable GitHub Actions workflows for Android projects.
+
+## 1. Workflow Structure and Organization
+
+### 1.1 Directory Structure
+```
+.github/
+└── workflows/
+    ├── android-build.yml     # Main build workflow
+    ├── android-test.yml      # Testing workflow
+    ├── android-release.yml   # Release workflow
+    └── android-pr.yml        # Pull request checks
+```
+
+### 1.2 Workflow Design Principles
+- **Single Responsibility**: Each workflow should have a single, clear purpose
+- **Reusability**: Extract common tasks into reusable actions
+- **Consistency**: Maintain consistent naming and structure across workflows
+- **Visibility**: Make workflow statuses and results clearly visible
+
+## 2. Common Android Workflow Patterns
+
+### 2.1 Basic Android Build Workflow
+```yaml
+name: Android CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      
+      - name: Build with Gradle
+        run: ./gradlew build
+      
+      - name: Run unit tests
+        run: ./gradlew test
+```
+
+### 2.2 Caching Dependencies
+```yaml
+- name: Setup Gradle Cache
+  uses: gradle/gradle-build-action@v2
+  with:
+    cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+```
+
+### 2.3 Running Instrumented Tests
+```yaml
+jobs:
+  instrumentation-tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Run instrumentation tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          script: ./gradlew connectedAndroidTest
+```
+
+## 3. Performance Optimization
+
+### 3.1 Gradle Optimization
+```yaml
+- name: Build with Gradle
+  run: ./gradlew build --parallel --build-cache
+  env:
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+```
+
+### 3.2 Selective Testing
+```yaml
+- name: Test changed modules
+  run: ./gradlew testDebugUnitTest --tests "com.example.changed.*"
+  if: ${{ contains(github.event.pull_request.changed_files, 'app/src/main/java/com/example/changed/') }}
+```
+
+### 3.3 Conditional Steps
+```yaml
+- name: Build release APK
+  if: startsWith(github.ref, 'refs/tags/v')
+  run: ./gradlew assembleRelease
+```
+
+## 4. Release Management
+
+### 4.1 Creating App Bundle
+```yaml
+- name: Build release bundle
+  run: ./gradlew bundleRelease
+
+- name: Sign Android release
+  uses: r0adkll/sign-android-release@v1
+  with:
+    releaseDirectory: app/build/outputs/bundle/release
+    signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+    alias: ${{ secrets.KEY_ALIAS }}
+    keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+    keyPassword: ${{ secrets.KEY_PASSWORD }}
+```
+
+### 4.2 Publishing to Play Store
+```yaml
+- name: Deploy to Play Store
+  uses: r0adkll/upload-google-play@v1
+  with:
+    serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    packageName: com.example.app
+    releaseFiles: app/build/outputs/bundle/release/app-release.aab
+    track: production
+    status: completed
+```
+
+## 5. Security Best Practices
+
+### 5.1 Secret Management
+- Store sensitive information (keystore passwords, API keys) as GitHub Secrets
+- Never hardcode secrets in workflow files
+- Use environments for controlling secret access
+
+### 5.2 Dependencies Security
+```yaml
+- name: Security scan with Snyk
+  uses: snyk/actions/gradle@master
+  env:
+    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+```
+
+### 5.3 Code Signing Security
+- Store signing keys securely as base64-encoded secrets
+- Limit access to workflows that can access signing keys
+- Rotate credentials regularly
+
+## 6. Pull Request Workflows
+
+### 6.1 PR Quality Checks
+```yaml
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Lint check
+        run: ./gradlew lint
+      
+      - name: Static analysis
+        run: ./gradlew detekt
+      
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+```
+
+### 6.2 PR Code Coverage
+```yaml
+- name: Generate code coverage
+  run: ./gradlew jacocoTestReport
+  
+- name: Upload coverage to Codecov
+  uses: codecov/codecov-action@v3
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
+    file: ./build/reports/jacoco/test/jacocoTestReport.xml
+```
+
+## 7. Matrix Testing
+
+### 7.1 Testing Different API Levels
+```yaml
+jobs:
+  test:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        api-level: [23, 29, 33]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          script: ./gradlew connectedCheck
+```
+
+## 8. Common Pitfalls and Solutions
+
+### 8.1 Long-Running Workflows
+- Split into parallel jobs where possible
+- Use incremental builds
+- Implement test splitting for large test suites
+
+### 8.2 Flaky Tests
+- Implement test retries
+- Isolate and quarantine flaky tests
+- Use video recording for UI test failures
+
+### 8.3 Large Artifacts
+- Use selective uploads with path patterns
+- Implement artifact cleanup workflows
+- Compress artifacts before upload
+
+## 9. Best Practices for Android-Specific Concerns
+
+### 9.1 Screenshot Testing
+```yaml
+- name: Run screenshot tests
+  run: ./gradlew executeScreenshotTests
+  
+- name: Upload screenshot diffs
+  if: failure()
+  uses: actions/upload-artifact@v3
+  with:
+    name: screenshot-diffs
+    path: app/build/outputs/screenshotTest
+```
+
+### 9.2 APK Size Monitoring
+```yaml
+- name: Analyze APK
+  run: ./gradlew analyzeReleaseBundle
+  
+- name: Upload size report
+  uses: actions/upload-artifact@v3
+  with:
+    name: apk-size-report
+    path: app/build/outputs/bundleAnalysis
+```
+
+### 9.3 Firebase Test Lab Integration
+```yaml
+- name: Firebase Test Lab
+  run: |
+    gcloud auth activate-service-account --key-file=${{ secrets.GCP_SA_KEY }}
+    gcloud firebase test android run \
+      --type instrumentation \
+      --app app/build/outputs/apk/debug/app-debug.apk \
+      --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+```
+
+By following these practices, you can create efficient, reliable, and secure CI/CD pipelines for your Android projects using GitHub Actions.

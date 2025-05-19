@@ -1,0 +1,282 @@
+---
+description: Guidelines for debugging API interactions in Android applications
+globs: ["**/api/**/*.kt", "**/network/**/*.kt", "**/data/**/*.kt"]
+---
+# API Debugging Guidelines for Android
+
+This document outlines best practices and techniques for debugging API interactions in Android applications.
+
+## 1. Initial Setup
+
+### 1.1 Required Dependencies
+```kotlin
+// build.gradle.kts
+dependencies {
+    // Networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    
+    // Debugging
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    debugImplementation("com.facebook.flipper:flipper:0.201.0")
+    debugImplementation("com.facebook.flipper:flipper-network-plugin:0.201.0")
+    debugImplementation("com.github.chuckerteam.chucker:library:4.0.0")
+    releaseImplementation("com.github.chuckerteam.chucker:library-no-op:4.0.0")
+    
+    // Testing
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+}
+```
+
+### 1.2 Logging Interceptor Configuration
+```kotlin
+// NetworkModule.kt
+fun provideOkHttpClient(context: Context): OkHttpClient {
+    return OkHttpClient.Builder()
+        .apply {
+            if (BuildConfig.DEBUG) {
+                val loggingInterceptor = HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BODY
+                }
+                addInterceptor(loggingInterceptor)
+                addInterceptor(ChuckerInterceptor.Builder(context).build())
+            }
+        }
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+}
+```
+
+## 2. Debugging Process
+
+### 2.1 Issue Isolation
+1. Create a minimal test case that reproduces the issue
+2. Isolate API calls from UI/business logic
+3. Use repository pattern for API interactions
+4. Log request/response cycles
+5. Use debugging tools to inspect network traffic
+
+### 2.2 Test Structure
+```kotlin
+@RunWith(AndroidJUnit4::class)
+class ApiServiceTest {
+    private lateinit var mockWebServer: MockWebServer
+    private lateinit var apiService: ApiService
+
+    @Before
+    fun setup() {
+        mockWebServer = MockWebServer()
+        mockWebServer.start()
+        
+        val baseUrl = mockWebServer.url("/")
+        apiService = Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(OkHttpClient.Builder().build())
+            .build()
+            .create(ApiService::class.java)
+    }
+
+    @After
+    fun tearDown() {
+        mockWebServer.shutdown()
+    }
+
+    @Test
+    fun `fetch investments returns expected data`() = runTest {
+        // Given
+        val mockResponse = MockResponse()
+            .setResponseCode(200)
+            .setBody("""{"investments":[{"id":"1","name":"Stock XYZ","value":1000}]}""")
+        mockWebServer.enqueue(mockResponse)
+        
+        // When
+        val response = apiService.getInvestments()
+        
+        // Then
+        val request = mockWebServer.takeRequest()
+        assertThat(request.path).isEqualTo("/investments")
+        assertThat(response.investments).hasSize(1)
+        assertThat(response.investments[0].name).isEqualTo("Stock XYZ")
+    }
+
+    @Test
+    fun `fetch investments handles error responses`() = runTest {
+        // Given
+        val mockResponse = MockResponse().setResponseCode(500)
+        mockWebServer.enqueue(mockResponse)
+        
+        // When/Then
+        assertFailsWith<HttpException> {
+            apiService.getInvestments()
+        }
+    }
+}
+```
+
+## 3. Network Inspection Tools
+
+### 3.1 Chucker
+1. Add the dependency and interceptor as shown above
+2. Launch your app in debug mode
+3. Open the Chucker UI from the notification to view all network activity
+4. Inspect request and response details, headers, and bodies
+
+### 3.2 Flipper
+1. Install the Flipper desktop application
+2. Add Flipper dependencies and configure as shown above
+3. Connect your device/emulator to Flipper
+4. Use the Network plugin to monitor all network requests
+5. Analyze timing, headers, and data payloads
+
+### 3.3 Charles Proxy
+1. Set up Charles Proxy on your development machine
+2. Configure your device/emulator to use Charles as a proxy
+3. Install the Charles certificate on your device for HTTPS inspection
+4. Monitor all network traffic between your app and API endpoints
+5. Use breakpoints to modify requests/responses for testing
+
+## 4. Common API Issues and Solutions
+
+### 4.1 Authentication
+1. **Issue:** Token expiration or invalid tokens
+   - **Debugging:** Check token validity and expiration
+   - **Solution:** Implement token refresh mechanism
+   
+2. **Issue:** Missing or incorrect authorization headers
+   - **Debugging:** Inspect request headers
+   - **Solution:** Add authentication interceptor
+
+### 4.2 Data Format
+1. **Issue:** JSON parsing errors
+   - **Debugging:** Log raw response body
+   - **Solution:** Adjust data models to match API format
+   
+2. **Issue:** Unexpected null fields
+   - **Debugging:** Use nullable types in data models
+   - **Solution:** Implement safe parsing with defaults
+
+### 4.3 Network
+1. **Issue:** Timeouts
+   - **Debugging:** Check connection and server status
+   - **Solution:** Adjust timeout settings
+   
+2. **Issue:** SSL/TLS errors
+   - **Debugging:** Verify certificate validity
+   - **Solution:** Update network security configuration
+
+## 5. Advanced Debugging Techniques
+
+### 5.1 Request Interception and Modification
+```kotlin
+class RequestModificationInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val originalRequest = chain.request()
+        
+        // Log original request
+        Timber.d("Original request: ${originalRequest.url}")
+        
+        // Modify request if needed
+        val modifiedRequest = originalRequest.newBuilder()
+            .addHeader("Custom-Header", "Value")
+            .build()
+            
+        return chain.proceed(modifiedRequest)
+    }
+}
+```
+
+### 5.2 Response Interception and Analysis
+```kotlin
+class ResponseAnalysisInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request()
+        val response = chain.proceed(request)
+        
+        // Log response details
+        Timber.d("Response code: ${response.code}")
+        
+        // Analyze response
+        if (response.isSuccessful) {
+            val responseBody = response.peekBody(Long.MAX_VALUE).string()
+            Timber.d("Response body: $responseBody")
+        } else {
+            Timber.e("Error response: ${response.code}")
+        }
+        
+        return response
+    }
+}
+```
+
+### 5.3 Mock Server for Testing
+```kotlin
+@Before
+fun setupMockServer() {
+    val server = MockWebServer()
+    server.start()
+    server.dispatcher = object : Dispatcher() {
+        override fun dispatch(request: RecordedRequest): MockResponse {
+            return when (request.path) {
+                "/investments" -> MockResponse()
+                    .setResponseCode(200)
+                    .setBody(readJsonFromAssets("investments.json"))
+                "/profile" -> MockResponse()
+                    .setResponseCode(200)
+                    .setBody(readJsonFromAssets("profile.json"))
+                else -> MockResponse().setResponseCode(404)
+            }
+        }
+    }
+}
+```
+
+## 6. Debugging Best Practices
+
+1. **Environment-Specific Configuration:**
+   - Use build variants to switch between API endpoints
+   - Configure debug-specific interceptors and tools
+
+2. **Error Tracking:**
+   - Integrate Sentry or Firebase Crashlytics for API error tracking
+   - Tag API errors with additional context for easier debugging
+
+3. **Remote Config:**
+   - Use Firebase Remote Config to enable/disable debug features
+   - Adjust logging levels remotely for specific users or issues
+
+4. **Performance Monitoring:**
+   - Track API call performance with Firebase Performance Monitoring
+   - Set up custom traces for critical API operations
+
+## 7. Recovery Procedures
+
+### 7.1 API Fallbacks
+1. Implement offline caching for critical data
+2. Use stale data with a refresh indicator
+3. Implement retry mechanisms with exponential backoff
+
+### 7.2 Debugging in Production
+1. Enable enhanced logging for specific users
+2. Implement remote log collection
+3. Create dedicated diagnostic screens
+4. Use feature flags to enable debug tools in production
+
+## 8. Documentation
+
+### 8.1 Required Documentation
+1. API endpoint specifications
+2. Authentication methods
+3. Expected request/response formats
+4. Error codes and handling
+5. Rate limit information
+
+### 8.2 Debugging Notes
+1. Document reproduction steps
+2. Record network traces for reference
+3. Note environment differences
+4. Track related issues/PRs

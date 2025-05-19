@@ -1,0 +1,370 @@
+---
+description: Best practices for integrating and using Sentry for error tracking and monitoring in Android applications
+globs: ["**/*.kt", "**/*.java", "**/*.gradle", "**/*.gradle.kts"]
+---
+# Sentry Integration for Android
+
+This document outlines best practices for integrating and using Sentry for error tracking and performance monitoring in Android applications.
+
+## 1. Setup and Configuration
+
+### 1.1 Add Dependencies
+```kotlin
+// build.gradle.kts (app level)
+dependencies {
+    // Core SDK
+    implementation("io.sentry:sentry-android:7.0.0")
+    
+    // Optional: Timber integration
+    implementation("io.sentry:sentry-timber:7.0.0")
+    
+    // Optional: Compose integration
+    implementation("io.sentry:sentry-compose-android:7.0.0")
+    
+    // Optional: OkHttp integration
+    implementation("io.sentry:sentry-okhttp:7.0.0")
+    
+    // Optional: Fragment integration
+    implementation("io.sentry:sentry-fragment:7.0.0")
+}
+```
+
+### 1.2 Initialize Sentry
+```kotlin
+// Application class
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        
+        SentryAndroid.init(this) { options ->
+            options.dsn = "https://examplePublicKey@o0.ingest.sentry.io/0"
+            
+            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring
+            // We recommend lowering this in production
+            options.tracesSampleRate = 0.5
+            
+            // Enable release health tracking
+            options.enableAutoSessionTracking(true)
+            
+            // Tag environment
+            options.environment = BuildConfig.BUILD_TYPE
+            
+            // Tag build/version
+            options.release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}"
+        }
+        
+        // Optional: Set user information
+        Sentry.configureScope { scope ->
+            scope.user = User().apply {
+                email = getUserEmail() // Your user management
+                id = getUserId()       // Your user management
+            }
+        }
+    }
+}
+```
+
+### 1.3 AndroidManifest Configuration
+```xml
+<manifest>
+    <application>
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
+        <!-- We'll initialize manually for more control -->
+    </application>
+</manifest>
+```
+
+## 2. Error and Exception Handling
+
+### 2.1 Manual Error Capture
+```kotlin
+try {
+    // Some code that might fail
+    riskyOperation()
+} catch (e: Exception) {
+    Sentry.captureException(e)
+    // Handle the exception appropriately
+}
+```
+
+### 2.2 Adding Context to Errors
+```kotlin
+// Add tags
+Sentry.setTag("feature", "payment")
+Sentry.setTag("user_tier", "premium")
+
+// Add extra data
+Sentry.setExtra("cart_value", cartValue.toString())
+Sentry.setExtra("items_count", itemsCount.toString())
+
+try {
+    processCheckout()
+} catch (e: Exception) {
+    // The exception will include the tags and extras
+    Sentry.captureException(e)
+}
+```
+
+### 2.3 Breadcrumbs
+```kotlin
+// Add breadcrumbs to trace user actions
+fun onAddToCartClicked(product: Product) {
+    Sentry.addBreadcrumb(
+        Breadcrumb().apply {
+            category = "user.action"
+            message = "Added product to cart"
+            level = SentryLevel.INFO
+            data = mapOf(
+                "product_id" to product.id,
+                "product_name" to product.name,
+                "product_price" to product.price.toString()
+            )
+        }
+    )
+    
+    // Your add to cart logic
+}
+```
+
+## 3. Performance Monitoring
+
+### 3.1 Automatic Performance Monitoring
+Sentry automatically instruments:
+- Activity/Fragment lifecycle
+- App start time
+- Slow and frozen frames
+- Network requests (with HTTP integration)
+- File I/O operations
+
+### 3.2 Custom Transactions
+```kotlin
+// Start a transaction
+val transaction = Sentry.startTransaction("checkout_flow", "purchase")
+
+// Perform your operations
+val result = performCheckout()
+
+// Add data to the transaction
+transaction.setData("payment_method", result.paymentMethod)
+transaction.setData("success", result.isSuccess)
+
+// Finish the transaction
+transaction.finish()
+```
+
+### 3.3 Custom Spans
+```kotlin
+// Start a transaction
+Sentry.startTransaction("image_processing", "media").use { transaction ->
+    // Operation 1
+    transaction.startChild("decode_image").use { span ->
+        // Perform operation
+        val bitmap = decodeImage()
+        span.setData("width", bitmap.width)
+        span.setData("height", bitmap.height)
+    }
+    
+    // Operation 2
+    transaction.startChild("apply_filters").use { span ->
+        // Perform operation
+        applyFilters()
+    }
+    
+    // Operation 3
+    transaction.startChild("save_to_disk").use { span ->
+        // Perform operation
+        saveToDisk()
+    }
+}
+```
+
+## 4. Integrations with Android Components
+
+### 4.1 Jetpack Compose Integration
+
+```kotlin
+// SentryNavHost with automatic tracing of navigation events
+@Composable
+fun AppNavHost(navController: NavHostController) {
+    SentryNavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        composable("home") { HomeScreen() }
+        composable("details/{id}") { DetailsScreen() }
+    }
+}
+
+// SentryButton to track button clicks
+@Composable
+fun ActionButton(onClick: () -> Unit) {
+    SentryButton(
+        onClick = onClick,
+        transactionName = "button_click",
+        transactionOperation = "ui"
+    ) {
+        Text("Click Me")
+    }
+}
+```
+
+### 4.2 Timber Integration
+```kotlin
+// Application class
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        
+        // Initialize Sentry first...
+        
+        // Plant Timber tree
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        } else {
+            Timber.plant(SentryTimberTree())
+        }
+    }
+}
+
+// Usage
+Timber.e("Something went wrong: %s", error.message)  // Will be sent to Sentry
+```
+
+### 4.3 OkHttp Integration
+```kotlin
+// Create OkHttpClient
+val okHttpClient = OkHttpClient.Builder()
+    .addInterceptor(SentryOkHttpInterceptor())  // Add Sentry interceptor
+    .build()
+
+// Create Retrofit with this client
+val retrofit = Retrofit.Builder()
+    .client(okHttpClient)
+    .baseUrl("https://api.example.com")
+    .addConverterFactory(GsonConverterFactory.create())
+    .build()
+```
+
+## 5. Best Practices
+
+### 5.1 Configuring Sample Rates
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Set tracesSampleRate to capture a percentage of transactions 
+    options.tracesSampleRate = 0.1  // 10% of transactions
+    
+    // Or use a sampler for more granular control
+    options.tracesSampler = CustomSampler()
+}
+
+class CustomSampler : SamplingContext.() -> Double {
+    override fun invoke(context: SamplingContext): Double {
+        // Don't sample debug transactions
+        if (BuildConfig.DEBUG) return 0.0
+        
+        val transactionContext = context.transactionContext
+        
+        // Capture all transactions for the checkout flow
+        if (transactionContext.name.startsWith("checkout")) {
+            return 1.0
+        }
+        
+        // Sample 10% of other transactions
+        return 0.1
+    }
+}
+```
+
+### 5.2 Privacy and Data Scrubbing
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Add data scrubber
+    options.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+        // Remove sensitive data
+        event.removeTag("credit_card_number")
+        
+        // Remove PII from specific fields
+        val userData = event.getExtra("user_data") as? Map<*, *>
+        if (userData != null) {
+            val sanitizedData = userData.filterKeys { it != "ssn" && it != "password" }
+            event.setExtra("user_data", sanitizedData)
+        }
+        
+        event
+    }
+}
+```
+
+### 5.3 Version Management
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Track releases for proper error grouping
+    options.release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}"
+    options.dist = BuildConfig.VERSION_CODE.toString()
+}
+```
+
+## 6. Debugging Sentry
+
+### 6.1 Debug Mode
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Enable debug mode for development builds
+    options.isDebug = BuildConfig.DEBUG
+}
+```
+
+### 6.2 Event Callbacks
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Log before sending
+    options.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+        Log.d("Sentry", "Sending event: ${event.eventId}")
+        event
+    }
+}
+```
+
+### 6.3 Manual Flush
+```kotlin
+// Ensure events are sent before app exit
+override fun onDestroy() {
+    super.onDestroy()
+    Sentry.flush(2000)  // Wait up to 2 seconds
+}
+```
+
+## 7. Advanced Configuration
+
+### 7.1 ProGuard/R8 Configuration
+```
+# Keep Sentry classes
+-keep class io.sentry.** { *; }
+-dontwarn io.sentry.**
+```
+
+### 7.2 ANR Detection
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Configure ANR detection
+    options.anrTimeoutIntervalMillis = 2000  // 2 seconds (default is 5)
+    options.enableAnrReporting(true)
+}
+```
+
+### 7.3 Battery and Network Considerations
+```kotlin
+SentryAndroid.init(this) { options ->
+    // Only send events when on Wi-Fi
+    options.transportGate = object : ITransportGate {
+        override fun isConnected(): Boolean {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val capabilities = cm.getNetworkCapabilities(network) ?: return false
+            return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        }
+    }
+}
+```
+
+By following these best practices, you can effectively integrate Sentry into your Android application for robust error tracking, monitoring, and performance analysis.

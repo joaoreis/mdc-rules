@@ -1,0 +1,80 @@
+---
+description: Ensures that Android code changes are accompanied by relevant documentation references
+globs: ["**/*.kt", "**/*.java", "**/*.xml"]
+---
+# Android Documentation Reference Rule
+
+This rule ensures that all Android code changes are properly documented with references to official documentation to maintain consistency and facilitate knowledge sharing.
+
+<rule>
+name: android_documentation_reference
+description: Enforces the inclusion of documentation references when making Android code changes
+filters:
+  - type: event
+    pattern: "code_change"
+  - type: content
+    pattern: "(?i)(android|jetpack|compose|lifecycle|material|navigation)"
+actions:
+  - type: suggest
+    message: |
+      Please include references to relevant Android documentation:
+
+      1. Official Documentation Sources:
+         - Android Developers: https://developer.android.com/
+         - Jetpack Libraries: https://developer.android.com/jetpack
+         - Compose: https://developer.android.com/jetpack/compose
+         - Material Design: https://material.io/develop/android
+         - Kotlin Docs: https://kotlinlang.org/docs/
+         - AndroidX Release Notes: https://developer.android.com/jetpack/androidx/releases
+
+      2. Required Documentation References:
+         - [ ] Link to relevant guide/documentation
+         - [ ] Specific section reference if applicable
+         - [ ] Code example from documentation if relevant
+         - [ ] Any deviations from documented patterns
+
+      3. Implementation Notes:
+         - Document WHY changes deviate from standard patterns
+         - Include version-specific considerations
+         - Note any deprecation warnings or upcoming changes
+         - Document minSDK requirements for specific APIs
+
+      4. Local Documentation:
+         - Update relevant local documentation
+         - Cross-reference with existing docs
+         - Add examples for team reference
+         - Include accessibility considerations
+
+      5. Helpful Reference Sites:
+         - Android Platform Versions: https://apilevels.com/
+         - AndroidX Release Tracker: https://androidx.tech/
+         - Google Maven Repository: https://maven.google.com/web/index.html
+         - Jetpack Compose Samples: https://github.com/android/compose-samples
+
+examples:
+  - input: |
+      "Updating ViewModel setup with StateFlow"
+    output: |
+      Following Android ViewModel documentation:
+      - ViewModel overview: https://developer.android.com/topic/libraries/architecture/viewmodel
+      - StateFlow guide: https://developer.android.com/kotlin/flow/stateflow-and-sharedflow
+      - Lifecycle-aware data loading: https://developer.android.com/topic/libraries/architecture/viewmodel/viewmodel-savedstate
+      
+      Note: This implementation uses StateFlow rather than LiveData as recommended in the latest best practices.
+  - input: |
+      "Implementing Compose navigation"
+    output: |
+      Following Jetpack Compose Navigation documentation:
+      - Navigation overview: https://developer.android.com/jetpack/compose/navigation
+      - Passing arguments: https://developer.android.com/jetpack/compose/navigation#nav-with-args
+      - Nested navigation: https://developer.android.com/jetpack/compose/navigation#nested-nav
+      
+      Implementation follows the standard Navigation Compose pattern with NavHost and composable destinations.
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - documentation
+    - android
+    - best-practices
+</rule>
