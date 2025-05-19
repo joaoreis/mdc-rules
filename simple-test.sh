@@ -5,7 +5,7 @@
 
 # Get absolute paths
 PROJECT_DIR=$(pwd)
-FIREBENDER_CONFIG=$(readlink -f firebender.json)
+FIREBENDER_CONFIG="/home/joao/.firebender/firebender.json"
 REAL_CONFIG="$FIREBENDER_CONFIG"
 
 # Default values
@@ -63,13 +63,13 @@ echo "Configuration updated to not include the rule."
 echo ""
 echo "Please follow these steps:"
 echo "1. Start a NEW conversation"
-echo "2. Use this query (copy-paste ready):"
+echo "2. Use this query:"
 echo "$QUERY"
 echo ""
-echo "3. Include this file (full path for clickable link):"
+echo "3. Include this file:"
 echo "$PROJECT_DIR/$TEST_FILE"
 echo ""
-echo "4. After receiving the response, copy it to this file (clickable):"
+echo "4. After receiving the response, copy it to:"
 echo "$BASELINE_FILE"
 echo ""
 echo "Press Enter when you have completed these steps..."
@@ -94,13 +94,13 @@ fi
 echo ""
 echo "Please follow these steps:"
 echo "1. Start a NEW conversation"
-echo "2. Use the SAME query (copy-paste ready):"
+echo "2. Use the SAME query:"
 echo "$QUERY"
 echo ""
-echo "3. Include the SAME file (full path for clickable link):"
+echo "3. Include the SAME file:"
 echo "$PROJECT_DIR/$TEST_FILE"
 echo ""
-echo "4. After receiving the response, copy it to this file (clickable):"
+echo "4. After receiving the response, copy it to:"
 echo "$RULE_ENABLED_FILE"
 echo ""
 echo "Press Enter when you have completed these steps..."
@@ -109,10 +109,11 @@ read
 # STEP 3: ANALYSIS
 clear
 echo "STEP 3: Analysis"
-echo "1. Compare the responses in (clickable links):"
+echo "1. Compare the responses in:"
 echo "   - $BASELINE_FILE"
 echo "   - $RULE_ENABLED_FILE"
-echo "2. Complete your analysis in: $ANALYSIS_FILE"
+echo "2. Complete your analysis in:"
+echo "   $ANALYSIS_FILE"
 echo ""
 echo "3. Restore original configuration? [Y/n]"
 read restore_choice
