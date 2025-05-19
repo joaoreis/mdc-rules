@@ -1,0 +1,12 @@
+{
+  "rules": [
+  ],
+  "ignore": [
+    "build/**",
+    ".gradle/**",
+    "github.properties",
+    "test/**"
+  ],
+  "mcpServers": {},
+  "mcpEnvFile": "path/to/env"
+}
