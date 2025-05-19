@@ -1,6 +1,14 @@
 # Ignore firebender symlink
 firebender.json
 
+# Backup files
+*.backup
+*.original
+
+# IDE files
+.idea/
+.vscode/
+
 # Gradle files
 .gradle/
 build/
@@ -8,7 +16,8 @@ build/
 # Local configuration file
 local.properties
 
-# Log Files
+# Temporary files
+*.tmp
 *.log
 
 # Android Studio generated files and folders

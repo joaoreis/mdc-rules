@@ -1,0 +1,42 @@
+name: Sample CI Workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      # Missing timeout
+      - name: Run tests
+        run: ./gradlew test
+
+      # Hardcoded credentials
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging..."
+          curl -u admin:password123 https://example.com/deploy
+
+      # Missing version pinning
+      - uses: actions/upload-artifact@latest
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
