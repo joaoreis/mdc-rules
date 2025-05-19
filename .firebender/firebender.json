@@ -1,0 +1,41 @@
+{
+  "rules": [
+    {
+      "rulesPaths": [
+        ".firebender/mdc/code-guidelines.mdc",
+        ".firebender/mdc/meta-rule-management.mdc",
+        ".firebender/mdc/bash.mdc",
+        ".firebender/mdc/problem-solving.mdc",
+        ".firebender/mdc/android-sdk.mdc",
+        ".firebender/mdc/gradle.mdc",
+        ".firebender/mdc/jetpack-compose.mdc",
+        ".firebender/mdc/git-commit-standards.mdc",
+        ".firebender/mdc/test-driven-development.mdc",
+        ".firebender/mdc/api-debugging.mdc",
+        ".firebender/mdc/log-checking.mdc",
+        ".firebender/mdc/documentation-reference.mdc",
+        ".firebender/mdc/github-actions.mdc",
+        ".firebender/mdc/sentry.mdc"
+      ]
+    },
+    {
+      "filePathMatches": "**/*.kt",
+      "rules": [
+        "Follow Kotlin coding conventions",
+        "Use nullable types sparingly",
+        "Use Kotlin coroutines for async operations",
+        "Use kotlinx.serialization for serializing and deserializing operations",
+        "Prefer Kotlin's scope functions (let, apply, run, with, also) when appropriate",
+        "Use data classes for model objects",
+        "Use sealed classes for representing restricted hierarchies",
+        "Favor immutability by using val over var when possible"
+      ]
+    }
+  ],
+  "ignore": [
+    "build/**",
+    ".gradle/**"
+  ],
+  "mcpServers": {},
+  "mcpEnvFile": ""
+}
