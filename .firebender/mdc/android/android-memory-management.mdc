@@ -1,0 +1,72 @@
+---
+description: Guidelines for memory management in Android applications to prevent leaks and improve performance.
+globs: **/*.kt **/*.java
+source: https://github.com/Mawla/cursor_rules/blob/main/.cursor/rules/memory-management.mdc
+version: May 2025
+adaptations: Customized for Android-specific memory management concerns and expanded with detailed guidelines
+---
+
+# Android Memory Management
+
+## Core Memory Management Principles
+
+- **Understand Memory Constraints**: Remember that Android devices have limited memory resources that should be managed efficiently.
+- **Release Resources Promptly**: Always release resources (bitmaps, streams, database connections) as soon as they're no longer needed.
+- **Implement Lifecycle-Aware Components**: Use lifecycle awareness to properly manage component state and prevent memory leaks.
+- **Avoid Memory Leaks**: Be careful with static references, inner classes, and AsyncTask implementations that can cause leaks.
+- **Minimize Object Creation**: Reduce garbage collection overhead by minimizing object creation, especially in tight loops or performance-critical paths.
+- **Use Memory-Efficient Data Structures**: Select appropriate data structures based on usage patterns and memory constraints.
+- **Utilize WeakReferences**: When appropriate, use WeakReferences to allow the garbage collector to reclaim objects when memory is needed.
+- **Monitor Memory Usage**: Regularly profile your app's memory usage with Memory Profiler in Android Studio.
+
+## Bitmap Handling
+
+- **Scale Bitmaps**: Load scaled-down versions of images when smaller sizes are sufficient.
+- **Recycle Bitmaps**: Explicitly call `recycle()` on Bitmap objects when you're done with them.
+- **Use BitmapFactory.Options**: Set `inSampleSize` to load smaller versions of large images.
+- **Consider Image Loading Libraries**: Use Glide, Picasso, or Coil instead of managing bitmaps directly.
+- **Avoid Multiple Image Resolutions**: Use vector drawables when possible to avoid storing multiple bitmap resolutions.
+
+## Background Operations
+
+- **Cancel Tasks When Not Needed**: Terminate background tasks when they're no longer relevant (activity destroyed, user navigated away).
+- **Use Lifecycle-Aware Components**: Coroutines with lifecycleScope, LiveData, or ViewModel to ensure proper cleanup.
+- **Consider WorkManager**: For deferred or periodic background work that needs to survive process death.
+- **Be Cautious with Services**: Ensure services are stopped when no longer needed to free up resources.
+
+## Leak Prevention
+
+- **Unregister Listeners**: Always unregister listeners (event listeners, broadcast receivers) in appropriate lifecycle methods.
+- **Use Static Inner Classes**: Avoid non-static inner classes that implicitly hold a reference to the outer class.
+- **Avoid Context Leaks**: Be careful when storing Activity contexts - use Application context when appropriate.
+- **Release View References**: Set references to null when views are no longer needed, especially in adapters.
+- **Use LeakCanary**: Consider integrating LeakCanary in debug builds to detect and fix memory leaks.
+
+## Collection Management
+
+- **Recycle View Holders**: Use RecyclerView instead of ListView for better memory efficiency through view recycling.
+- **Use SparseArrays**: Replace HashMap<Integer, Object> with SparseArray<Object> for more memory efficiency.
+- **Lazy Load Collections**: Load large data sets incrementally or use paging to avoid large memory allocations.
+- **Consider Custom Collections**: Implement custom collection classes optimized for specific use cases when standard collections are inefficient.
+
+## Android-Specific Optimization
+
+- **Avoid Memory Churn**: Minimize allocation and deallocation cycles in performance-critical code.
+- **Use Pooling**: Implement object pooling for frequently created and discarded objects.
+- **Optimize XML Layouts**: Flatten view hierarchies and use ConstraintLayout to reduce memory overhead.
+- **Use Appropriate Data Storage**: Choose the right persistence mechanism based on data size and access patterns.
+- **Handle Configuration Changes**: Properly handle configuration changes to avoid unnecessary resource recreation.
+
+## Native Code Considerations
+
+- **Manage Native Memory**: Explicitly free native resources that aren't managed by the garbage collector.
+- **Use Android NDK Carefully**: Be aware that memory allocated in JNI code must be explicitly released.
+- **Profile Native Code**: Use Android Studio's native memory profiler to detect leaks in native code.
+
+## Debugging Memory Issues
+
+- **Use Memory Profiler**: Regularly analyze your app with Android Studio's Memory Profiler.
+- **Perform Heap Dumps**: Capture and analyze heap dumps to identify memory leaks.
+- **Look for Reference Cycles**: Identify and break reference cycles that prevent garbage collection.
+- **Force Garbage Collection**: During debugging, manually trigger GC to see if memory is properly reclaimed.
+- **Monitor System Health**: Keep an eye on overall memory pressure indicators like low memory warnings.

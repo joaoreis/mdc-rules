@@ -1,0 +1,74 @@
+---
+description: Guidelines for planning and implementing updates in Android applications.
+globs: **/*.gradle **/*.kt **/*.java **/*.xml
+source: https://github.com/Mawla/cursor_rules/blob/main/.cursor/rules/plan-updates.mdc
+version: May 2025
+adaptations: Customized for Android application development with specific Android-oriented strategies
+---
+
+# Plan Updates for Android Development
+
+## Update Planning
+
+- **Review Release Notes**: Always review Android platform, library, and tool release notes before updating.
+- **Use Semantic Versioning**: Follow semantic versioning (MAJOR.MINOR.PATCH) to clearly indicate the nature of changes.
+- **Create an Update Roadmap**: Plan updates with a clear timeline and milestones.
+- **Prioritize Security Updates**: Always prioritize security patches and vulnerability fixes.
+- **Document API Changes**: Document all API changes, additions, and removals before implementation.
+- **Maintain a Changelog**: Keep a detailed changelog that describes all changes made in each version.
+- **Track Dependencies**: Maintain an up-to-date list of all dependencies and their versions.
+- **Consider Target User Base**: Consider fragmentation and OS version distribution among your user base.
+- **Schedule Regular Updates**: Establish a consistent update schedule to set user expectations.
+- **Plan Feature Flags**: Use feature flags for phased rollouts and easy rollbacks if needed.
+
+## Implementation Strategies
+
+- **Implement Feature by Feature**: Add one feature at a time and test thoroughly before moving to the next.
+- **Follow MVP Pattern**: Use Minimum Viable Product approach for new features.
+- **Use Dark Launches**: Roll out backend changes before activating them in the UI.
+- **Implement A/B Testing**: Use A/B testing for major UI changes to gauge user reception.
+- **Create Migration Paths**: Provide clear migration paths for breaking changes.
+- **Consider Backward Compatibility**: Ensure updates maintain backward compatibility when possible.
+- **Add Analytics**: Include analytics to monitor usage and performance of new features.
+- **Create Fallback Options**: Implement fallback mechanisms for critical functionality.
+- **Use Progressive Enhancement**: Add features that enhance but don't break core functionality.
+- **Maintain an Update Branch**: Keep updates in a separate branch until ready for release.
+
+## Testing Updates
+
+- **Create Test Plans**: Develop comprehensive test plans for each update.
+- **Automate Testing**: Use automated tests (unit, integration, UI) to verify update functionality.
+- **Perform Regression Testing**: Ensure updates don't break existing functionality.
+- **Test on Multiple Devices**: Verify updates on various device models, screen sizes, and OS versions.
+- **Conduct Beta Testing**: Use internal or public beta programs for early feedback.
+- **Monitor Performance Impact**: Assess the performance impact of updates (memory, battery, network).
+- **Test Offline Functionality**: Verify app behavior in offline or poor connectivity scenarios.
+- **Validate Data Migrations**: Test data migrations thoroughly to prevent data loss or corruption.
+- **Use Firebase Test Lab**: Leverage Firebase Test Lab for testing on real devices.
+- **Conduct Security Testing**: Perform security assessments for each major update.
+
+## Rollout Strategies
+
+- **Use Staged Rollouts**: Release updates to a small percentage of users first.
+- **Monitor Crash Reports**: Closely monitor crash reports during rollout.
+- **Gather User Feedback**: Collect and analyze user feedback during rollout.
+- **Be Ready to Rollback**: Maintain the ability to quickly rollback problematic updates.
+- **Communicate with Users**: Clearly communicate changes to users through release notes.
+- **Consider Regional Rollouts**: Use regional rollouts for localized content or features.
+- **Use Silent Updates**: Consider silent updates for non-user-facing improvements.
+- **Time Rollouts Appropriately**: Schedule rollouts during low-usage periods.
+- **Track Adoption Rates**: Monitor update adoption rates to identify potential issues.
+- **Plan for Play Store Review**: Account for Google Play Store review time in rollout planning.
+
+## Post-Update Maintenance
+
+- **Monitor Performance Metrics**: Track app performance metrics after updates.
+- **Address User Feedback**: Quickly address critical user feedback and issues.
+- **Plan Follow-up Releases**: Schedule follow-up releases to address discovered issues.
+- **Update Documentation**: Keep user and developer documentation up-to-date.
+- **Review Analytics Data**: Analyze usage patterns to guide future development.
+- **Conduct Post-Mortem Reviews**: Perform post-mortem analysis of update processes.
+- **Update Technical Debt Tracking**: Reassess technical debt after major updates.
+- **Plan for Future Compatibility**: Consider how current updates affect future development.
+- **Review Resource Usage**: Monitor system resource usage post-update.
+- **Update Test Suites**: Enhance test suites based on discovered issues.
