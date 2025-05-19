@@ -1,0 +1,160 @@
+---
+description: Rules and best practices for writing effective JUnit tests in Android projects
+globs: ["**/*Test.kt", "**/*Test.java", "**/androidTest/**", "**/test/**"]
+---
+
+# JUnit Testing Guidelines
+
+## General Testing Principles
+
+- **Test One Thing**: Each test should test exactly one thing. The test name should describe what is being tested.
+- **Use Descriptive Test Names**: Test names should clearly describe what they are testing using a consistent naming convention like `given_when_then` or `methodName_stateUnderTest_expectedBehavior`.
+- **Independent Tests**: Tests should not depend on other tests or on the order of execution.
+- **AAA Pattern**: Structure tests using the Arrange-Act-Assert pattern to clearly separate setup, execution, and verification.
+- **Fast Tests**: Tests should run quickly to support rapid development cycles.
+- **Test Failures**: Tests should fail for exactly one reason and provide clear error messages on failure.
+- **Deterministic Tests**: Tests should consistently produce the same results regardless of environment or execution order.
+- **Use Testing Utilities**: Leverage testing utilities provided by AndroidX Test, Espresso, Robolectric, etc.
+
+## JUnit Configuration
+
+### Required Dependencies
+
+```kotlin
+dependencies {
+    // JUnit 4 framework
+    testImplementation("junit:junit:4.13.2")
+    // AndroidX Test for testing components
+    testImplementation("androidx.test:core:1.5.0") 
+    testImplementation("androidx.test.ext:junit:1.1.5")
+    // Optional - Robolectric for testing components dependent on Android framework
+    testImplementation("org.robolectric:robolectric:4.10.3")
+    // Optional - Mockito for mocking
+    testImplementation("org.mockito:mockito-core:5.4.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0")
+    // Optional - MockK for Kotlin-friendly mocking
+    testImplementation("io.mockk:mockk:1.13.5")
+    // Optional - Kotest for assertions
+    testImplementation("io.kotest:kotest-assertions-core:5.6.2")
+}
+```
+
+### AndroidJUnitRunner Configuration
+
+```kotlin
+android {
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    
+    testOptions {
+        unitTests.apply {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+}
+```
+
+## Unit Testing Best Practices
+
+- **Use Test Fixtures**: Create reusable test fixtures using `@Before`, `@After`, `@BeforeClass`, and `@AfterClass`.
+- **Mock External Dependencies**: Use mocking frameworks like Mockito or MockK to isolate code under test.
+- **Test Edge Cases**: Include tests for edge cases, boundary conditions, and error scenarios.
+- **Verify Exceptions**: Use `assertThrows` or `try-catch` to verify exception handling.
+- **Limit Assertions**: Keep the number of assertions in a single test method minimal.
+- **Test Public APIs**: Focus on testing public APIs and behavior, not implementation details.
+- **Use Test Rules**: Use JUnit Rules for common test setup and tear down, such as `InstantTaskExecutorRule` for LiveData testing.
+- **Test Data**: Use test data factories to generate consistent test data.
+- **Parameterized Tests**: Use parameterized tests for similar tests with different inputs and expected outputs.
+
+## Android-Specific Testing Guidelines
+
+- **Use AndroidX Test**: Leverage AndroidX Test libraries for Android-specific testing.
+- **Use Robolectric**: For tests that require Android framework components but should run quickly as local unit tests.
+- **Context Isolation**: Ensure tests don't depend on the state of the device or existing app data.
+- **Architecture Testing**: Test each layer of your architecture separately.
+- **ViewModel Testing**: Use `InstantTaskExecutorRule` for synchronous execution of tasks posted to LiveData.
+- **Coroutines Testing**: Use `TestCoroutineDispatcher` or `TestScope` for testing suspending functions.
+
+## Test Annotations
+
+- **@Test**: Marks a method as a test method.
+- **@Before**: Executes before each test method in the class.
+- **@After**: Executes after each test method in the class.
+- **@BeforeClass**: Executes once before any test method in the class.
+- **@AfterClass**: Executes once after all test methods in the class.
+- **@Ignore**: Skips the test method.
+- **@RunWith**: Specifies the runner to use for the test class.
+- **@Rule**: Adds a rule to the test class.
+- **@ClassRule**: Adds a rule that applies to all test methods of a class.
+- **@Parameters**: Marks the test class as parameterized.
+
+## Testing Components in Clean Architecture
+
+### Data Layer Testing
+
+- **Repository Tests**: Test repositories with mock data sources.
+- **API Tests**: Use MockWebServer to test API service implementations.
+- **Database Tests**: Use in-memory databases for Room testing.
+
+### Domain Layer Testing
+
+- **Use Case Tests**: Test use cases with mock repositories.
+- **Domain Model Tests**: Verify domain model behavior and validation.
+
+### Presentation Layer Testing
+
+- **ViewModel Tests**: Test ViewModels with mock repositories and use cases.
+- **Lifecycle Awareness**: Use `InstantTaskExecutorRule` for LiveData and `TestCoroutineDispatcher` for coroutines.
+
+## UI Testing with Espresso
+
+- **ViewMatchers**: Use view matchers like `withId()`, `withText()` to find views.
+- **ViewActions**: Use view actions like `click()`, `typeText()` to interact with views.
+- **ViewAssertions**: Use view assertions like `matches()`, `isDisplayed()` to verify the state.
+- **Idling Resources**: Use idling resources for asynchronous operations.
+- **Screen Robots**: Implement screen robot pattern for more maintainable UI tests.
+
+## Testing with Mockito & MockK
+
+### Mockito Examples
+
+```kotlin
+// Mock creation
+val mockRepository = mock(UserRepository::class.java)
+
+// Stubbing
+`when`(mockRepository.getUser(1)).thenReturn(User(1, "John"))
+
+// Verification
+verify(mockRepository).getUser(1)
+verify(mockRepository, times(1)).getUser(any())
+verify(mockRepository, never()).deleteUser(any())
+```
+
+### MockK Examples
+
+```kotlin
+// Mock creation
+val mockRepository = mockk<UserRepository>()
+
+// Stubbing
+every { mockRepository.getUser(1) } returns User(1, "John")
+
+// Verification
+verify { mockRepository.getUser(1) }
+verify(exactly = 1) { mockRepository.getUser(any()) }
+verify { mockRepository wasNot called }
+```
+
+## Common Testing Mistakes
+
+- **Testing Implementation Details**: Focus on behavior, not implementation details.
+- **Mocking Everything**: Only mock what is necessary; use real objects when possible.
+- **Ignoring Thread Management**: Always manage threads and asynchronous operations correctly in tests.
+- **Not Testing Edge Cases**: Include tests for edge cases and error scenarios.
+- **Not Following AAA Pattern**: Structure tests according to the Arrange-Act-Assert pattern.
+- **Hard-Coded Test Data**: Use test data factories and avoid hard-coded values.
+- **Skipping Small Tests**: Don't skip unit tests in favor of larger integration tests.
+- **Non-Deterministic Tests**: Avoid tests that depend on external factors and can produce different results on different runs.
