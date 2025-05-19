@@ -1,0 +1,61 @@
+---
+description: Automatically format code files using appropriate formatters based on file type
+globs: ["**/*.{kt,java,xml,gradle,kts,md,json}"]
+---
+# Auto Format Rule for Android Project
+# Enforces consistent code formatting using ktlint, google-java-format, and other tools
+
+<rule>
+name: auto_format_android
+description: Automatically format code files using appropriate formatters
+filters:
+  - type: file_extension
+    pattern: "\\.(kt|java|xml|gradle|kts|md|json)$"  # Android-specific file extensions
+  - type: event
+    pattern: "file_save"  # Trigger on file save
+actions:
+  - type: execute
+    conditions:
+      - pattern: "\\.kt$"
+        command: "./gradlew ktlintFormat -PinputFiles=\"$FILE\""  # Auto-correct Kotlin files
+      - pattern: "\\.java$"
+        command: "java -jar google-java-format.jar --replace \"$FILE\""  # Auto-correct Java files
+      - pattern: "\\.xml$"
+        command: "./gradlew spotlessApply -PinputFiles=\"$FILE\""  # Auto-correct XML files
+  - type: suggest
+    message: |
+      Code formatting applied automatically:
+      - Kotlin files: ktlint format
+      - Java files: google-java-format
+      - XML files: spotless apply
+
+      To configure formatting rules:
+      - Kotlin: Edit .editorconfig
+      - Spotless: Edit build.gradle.kts spotless configuration
+examples:
+  - input: |
+      // Bad Kotlin formatting
+      fun badMethod(x:Int,y:Int){
+        return x+y
+      }
+
+      // Good Kotlin formatting (after ktlint)
+      fun badMethod(x: Int, y: Int) {
+          return x + y
+      }
+  - input: |
+      // Bad Java formatting
+      public int badMethod(int x,int y){return x+y;}
+
+      // Good Java formatting (after google-java-format)
+      public int badMethod(int x, int y) {
+        return x + y;
+      }
+metadata:
+  priority: high
+  version: 1.0
+  dependencies:
+    - ktlint
+    - google-java-format
+    - spotless
+</rule>
