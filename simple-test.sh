@@ -5,13 +5,54 @@
 
 # Get absolute paths
 PROJECT_DIR=$(pwd)
-FIREBENDER_CONFIG="/home/joao/.firebender/firebender.json"
+
+# Load configuration file if it exists
+CONFIG_FILE="test-config.properties"
+CONFIG_TEMPLATE="test-config.template.properties"
+
+# Check if config file exists, if not, create it from template
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Config file not found. Creating from template..."
+    cp "$CONFIG_TEMPLATE" "$CONFIG_FILE"
+    echo "Created $CONFIG_FILE. Please edit it if needed."
+fi
+
+# Load configuration
+if [ -f "$CONFIG_FILE" ]; then
+    # Source doesn't work with "property=value" format, so we use grep and cut
+    DEFAULT_TEST_FILE=$(grep "^DEFAULT_TEST_FILE=" "$CONFIG_FILE" | cut -d'=' -f2)
+    DEFAULT_QUERY=$(grep "^DEFAULT_QUERY=" "$CONFIG_FILE" | cut -d'=' -f2)
+    CONFIG_FIREBENDER=$(grep "^FIREBENDER_CONFIG=" "$CONFIG_FILE" | cut -d'=' -f2)
+fi
+
+# Use config values or defaults
+TEST_FILE=${DEFAULT_TEST_FILE:-"test-files/kotlin/SampleClass.kt"}
+QUERY=${DEFAULT_QUERY:-"Review this code and suggest improvements"}
+
+# Determine firebender.json path
+if [ -n "$CONFIG_FIREBENDER" ]; then
+    # Use path from config file if specified
+    FIREBENDER_CONFIG="$CONFIG_FIREBENDER"
+elif [ -n "$FIREBENDER_CONFIG" ]; then
+    # Use environment variable if set
+    FIREBENDER_CONFIG="$FIREBENDER_CONFIG"
+else
+    # Default to standard location
+    FIREBENDER_CONFIG="$HOME/.firebender/firebender.json"
+fi
+
+# Validate firebender.json exists
+if [ ! -f "$FIREBENDER_CONFIG" ]; then
+    echo "Error: Firebender configuration file not found at: $FIREBENDER_CONFIG"
+    echo "Please set the correct path in $CONFIG_FILE or FIREBENDER_CONFIG environment variable."
+    exit 1
+fi
+
 REAL_CONFIG="$FIREBENDER_CONFIG"
+echo "Using Firebender config: $REAL_CONFIG"
 
 # Default values
 RULE_PATH=${1:-".firebender/mdc/core/code-guidelines.mdc"}
-TEST_FILE="test-files/kotlin/SampleClass.kt"
-QUERY="Review this code and suggest improvements"
 RULE_NAME=$(basename "$RULE_PATH" .mdc)
 FILE_EXT=$(echo "$TEST_FILE" | rev | cut -d'.' -f1 | rev)
 OUTPUT_DIR="$PROJECT_DIR/test-results/simplified"
@@ -20,7 +61,7 @@ OUTPUT_DIR="$PROJECT_DIR/test-results/simplified"
 mkdir -p "$OUTPUT_DIR"
 
 # Output filenames
-CONFIG_FILE="$PROJECT_DIR/firebender-test.json"
+MIN_CONFIG_FILE="$PROJECT_DIR/firebender-test.json"
 BASELINE_FILE="$OUTPUT_DIR/${RULE_NAME}-${FILE_EXT}-baseline.txt"
 RULE_ENABLED_FILE="$OUTPUT_DIR/${RULE_NAME}-${FILE_EXT}-with-rule.txt"
 ANALYSIS_FILE="$OUTPUT_DIR/${RULE_NAME}-analysis.md"
@@ -58,7 +99,7 @@ clear
 echo "STEP 1: Baseline Test (without rule)"
 
 # Update the firebender.json file without the rule
-cat "$CONFIG_FILE" > "$REAL_CONFIG"
+cat "$MIN_CONFIG_FILE" > "$REAL_CONFIG"
 echo "Configuration updated to not include the rule."
 echo ""
 echo "Please follow these steps:"
@@ -82,7 +123,7 @@ echo "STEP 2: Test with Rule Enabled"
 # Directly modify the firebender.json file to include the rule
 if command -v jq &> /dev/null; then
     # Use jq to add the rule
-    jq --arg rule "$RULE_PATH" '.rules += [$rule]' "$CONFIG_FILE" > "$REAL_CONFIG"
+    jq --arg rule "$RULE_PATH" '.rules += [$rule]' "$MIN_CONFIG_FILE" > "$REAL_CONFIG"
     echo "Configuration updated to include the rule."
 else
     # Manually add the rule to the configuration

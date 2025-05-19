@@ -1,7 +1,8 @@
 # Ignore firebender symlink
 firebender.json
 
-# Backup files
+# Testing configuration
+test-config.properties
 *.backup
 *.original
 
