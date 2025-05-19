@@ -66,7 +66,9 @@ enable_rule() {
         echo "Rule $rule_path is already enabled."
     else
         # Find the first "rules": [ section and add the rule after it
-        sed -i "/\"rules\": \[/a \    \"$rule_path\"," firebender.json
+        # Escape forward slashes in the rule path for sed
+        escaped_path=$(echo "$rule_path" | sed 's/\//\\\//g')
+        sed -i "/\"rules\": \[/a \    \"$escaped_path\"," firebender.json
         echo "Rule $rule_path has been enabled."
         echo ""
         echo "IMPORTANT: You must start a new conversation for this change to take effect."
@@ -80,7 +82,9 @@ disable_rule() {
     
     if grep -q "$rule_path" firebender.json; then
         # Remove the rule from the file
-        sed -i "/\"$rule_path\"/d" firebender.json
+        # Escape forward slashes and other special characters in the rule path for sed
+        escaped_path=$(echo "$rule_path" | sed 's/\//\\\//g')
+        sed -i "/\"$escaped_path\"/d" firebender.json
         echo "Rule $rule_path has been disabled."
         echo ""
         echo "IMPORTANT: You must start a new conversation for this change to take effect."
@@ -108,7 +112,7 @@ disable_all_rules() {
     # Make a backup before making changes
     backup_config
     # Remove all .mdc file references
-    sed -i "/\.mdc\"/d" firebender.json
+    grep -vF ".mdc\"" firebender.json > firebender.json.tmp && mv firebender.json.tmp firebender.json
     echo "All rules have been disabled. Use --restore to revert this change."
     echo ""
     echo "IMPORTANT: You must start a new conversation for this change to take effect."
