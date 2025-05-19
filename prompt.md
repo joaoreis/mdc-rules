@@ -27,6 +27,7 @@ and compare agent responses with versus without each rule.
 - Determine test sequence (which rules can be tested in parallel vs. sequential)
 
 ## Performance Metrics to Track
+Based on this idea, help me creating a prompt to input into another ai. I will export the project as context for it, and need a prompt to continue doing the testing that I was doing.
 
 For each rule, measure and compare:
 

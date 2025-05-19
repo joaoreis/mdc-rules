@@ -1,0 +1,53 @@
+=== Test Configuration ===
+File: test-files/bash/sample-script.sh
+Query: Review this code and suggest improvements
+Mode: baseline
+Date: seg 19 mai 2025 16:56:21 -03
+
+=== File Content ===
+#!/bin/bash
+
+# Sample bash script with common issues for testing MDC rules
+
+# No error handling
+cd /some/directory
+
+# Using unsafe variable expansion
+echo "Processing file: $file"
+
+# Not quoting variables
+files=$(ls *.txt)
+for file in $files; do
+    echo Processing $file
+done
+
+# Command without checking exit code
+rm -rf /tmp/test-dir
+
+# Hardcoded paths
+log_file="/var/log/app.log"
+
+# Function without local variables
+function process_data() {
+    result="Processed data"
+    echo $result
+}
+
+# No input validation
+user_input=$1
+echo "User provided: $user_input"
+
+# Using deprecated syntax
+function cleanup {
+    echo "Cleaning up..."
+}
+
+# Piping to commands without error checking
+cat file.txt | grep "pattern"
+=== Test Query ===
+Review this code and suggest improvements
+
+=== Response ===
+I see a number of issues in this bash script that could be improved. Here are my recommendations:
+
+1. **Add error handling for directory change**:

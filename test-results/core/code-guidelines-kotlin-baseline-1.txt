@@ -1,0 +1,50 @@
+=== Test Configuration ===
+Rule: .firebender/mdc/core/code-guidelines.mdc
+File: test-files/kotlin/SampleClass.kt
+Query: Review this code and suggest improvements
+Mode: baseline
+Date: seg 19 mai 2025 16:54:41 -03
+
+=== File Content ===
+package com.example.test
+
+/**
+ * A simple sample class for testing MDC rules
+ */
+class SampleClass {
+    // Some fields with different naming styles
+    private val camelCaseVariable = "test"
+    private val snake_case_variable = "test"
+    private val PascalCaseVariable = "test"
+
+    // Some magic numbers
+    fun calculateTotal(quantity: Int): Int {
+        return quantity * 10 + 5
+    }
+
+    // Method with potential null issues
+    fun processData(data: String?): String {
+        return data!!.uppercase()
+    }
+
+    // Method with hardcoded values
+    fun getApiUrl(): String {
+        return "https://api.example.com/v1/data"
+    }
+
+    // Method with poor error handling
+    fun parseValue(input: String): Int {
+        return input.toInt()
+    }
+}
+=== Test Query ===
+Review this code and suggest improvements
+
+=== Response ===
+I've reviewed the code and have a few suggestions for improvements:
+
+1. **Variable Naming Consistency**: I notice you have variables with different naming conventions. In Kotlin, the standard convention is to use camelCase for variables. Consider changing:
+   - `snake_case_variable` to `snakeCaseVariable`
+   - `PascalCaseVariable` to `pascalCaseVariable`
+
+2. **Magic Numbers**: In the `calculateTotal` function, there are magic numbers (10 and 5) that would be better as named constants to improve readability and maintainability. For example:
