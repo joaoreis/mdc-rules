@@ -6,6 +6,8 @@ A comprehensive collection of Machine Directed Comments (MDC) rules for Android 
 
 This repository contains a carefully curated set of MDC rules for enhancing Android development workflows when working with AI coding assistants. The rules are organized into logical categories to improve maintainability, usability, and discoverability.
 
+The project includes a simplified testing framework to evaluate and compare the effectiveness of different MDC rules.
+
 ## Repository Structure
 
 ```
@@ -73,6 +75,23 @@ The rules are configured in the [firebender.json](./firebender.json) file, which
    ln -s /home/youruser/.firebender/firebender.json firebender.json
    ```
 3. Add desired rules to your project following the structure in this repository
+4. Use the testing framework in the `test/` directory to evaluate rule effectiveness
+
+## Testing Framework
+
+A simplified testing framework is provided to help evaluate the effectiveness of different MDC rules:
+
+- **Location:** `test/` directory
+- **Purpose:** Compare AI responses with and without specific rules enabled
+- **Usage:** See `test/README.md` for detailed instructions
+
+To test a rule:
+```bash
+cd test/scripts
+./test-rule.sh --rule .firebender/mdc/core/code-guidelines.mdc --case ../cases/core/SampleClass.kt
+```
+
+This will guide you through testing the rule and analyzing its impact on AI responses.
 
 ## Contributing
 
