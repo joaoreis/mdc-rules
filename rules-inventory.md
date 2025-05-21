@@ -16,7 +16,7 @@ last.
 
 - Rules must be tested in separate Firebender conversations
 - Changes to firebender.json only take effect when starting a new conversation
-- Use test-workflow.sh script to guide through the complete testing process
+- Use the new `test/scripts/test-rule.sh` script to guide the testing process
 
 ## Detailed Inventory
 

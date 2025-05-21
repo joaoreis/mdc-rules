@@ -1,11 +1,3 @@
-=== Test Configuration ===
-Rule: .firebender/mdc/core/code-guidelines.mdc
-File: test-files/kotlin/SampleClass.kt
-Query: Review this code and suggest improvements
-Mode: with_rule
-Date: seg 19 mai 2025 16:55:35 -03
-
-=== File Content ===
 package com.example.test
 
 /**
@@ -37,10 +29,3 @@ class SampleClass {
         return input.toInt()
     }
 }
-=== Test Query ===
-Review this code and suggest improvements
-
-=== Response ===
-Recommendations for SampleClass.kt:
-
-1. Standardize variable naming using camelCase:
